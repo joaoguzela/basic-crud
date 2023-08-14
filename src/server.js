@@ -1,6 +1,8 @@
+// @ts-nocheck
 import http from 'node:http'
 import { json } from './middleware/json.js'
 import { routes } from './routes.js'
+import { extractQueryParams } from './extract-query-params.js'
 
 //stateful - stateless
 //Tudo que é declarado durante o run do codigo, dados ficam salvos em memoria local - Aplicação salva informações em serviços internos
@@ -19,12 +21,14 @@ const server = http.createServer(async (req, res) => {
 	await json(req, res)
 
 	const route = routes.find((route) => {
-		// @ts-ignore
 		return route.method === method && route.path.test(url)
 	})
 	if (route) {
-		const routeParams = req.url?.match()
-		console.log(route.path)
+		const routeParams = req.url?.match(route.path)
+		const { query, ...params } = routeParams?.groups
+
+		req.params = params
+		req.query = query ? extractQueryParams(query) : {}
 		return route?.handler(req, res)
 	}
 
